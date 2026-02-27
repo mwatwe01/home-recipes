@@ -28,7 +28,7 @@
   .recipe-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
   .recipe-card .meta { font-size: 13px; color: var(--sub); display: flex; gap: 12px; flex-wrap: wrap; }
   .cat-Breakfast{background:#fff3e0;color:#e65100} .cat-Lunch{background:#e8f5e9;color:#2e7d32}
-  .cat-Dinner{background:#e3f2fd;color:#1565c0} .cat-Dessert{background:#fce4ec;color:#c62828}
+  .cat-Dinner{background:#e3f2fd;color:#1565c0}   .cat-Dessert{background:#fce4ec;color:#c62828;display:none}
   .cat-Snack{background:#f3e5f5;color:#6a1b9a} .cat-Other{background:#f5f5f5;color:#424242}
   .empty-state { text-align: center; padding: 60px 20px; color: var(--sub); }
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
@@ -87,16 +87,7 @@
   .chip { flex-shrink: 0; padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; color: var(--sub); transition: all .2s; }
   .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .source-badge { font-size: 11px; color: var(--sub); margin-top: 6px; }
-  /* Setup overlay */
-  .setup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .setup-box { background: var(--card); border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 390px; }
-  .setup-box h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-  .setup-box p { font-size: 14px; color: var(--sub); line-height: 1.6; margin-bottom: 16px; }
-  .setup-box ol { font-size: 14px; color: var(--sub); line-height: 2; padding-left: 18px; margin-bottom: 18px; }
-  .setup-box ol a { color: var(--accent); }
-  .setup-box .key-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .setup-box .key-row input { flex: 1; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: monospace; outline: none; }
-  .setup-box .key-row input:focus { border-color: var(--accent); }
+
   .sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sub); padding: 4px 0; }
   .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
   .sync-dot.synced { background: #4caf50; }
@@ -107,23 +98,7 @@
 </head>
 <body>
 
-<!-- SETUP OVERLAY -->
-<div class="setup-overlay" id="setupOverlay">
-  <div class="setup-box">
-    <h2>☁️ Connect Cloud Storage</h2>
-    <p>Your recipes will be saved to <strong>JSONBin.io</strong> — a free cloud database — so they persist across all your devices and sessions.</p>
-    <ol>
-      <li>Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> and sign up free</li>
-      <li>Click your avatar → <strong>API Keys</strong></li>
-      <li>Copy your <strong>Master Key</strong> and paste it below</li>
-    </ol>
-    <div class="key-row">
-      <input type="password" id="apiKeyInput" placeholder="$2a$10$...your master key...">
-    </div>
-    <button class="btn btn-primary" onclick="initStorage()">🔗 Connect & Start</button>
-    <p style="margin-top:12px;font-size:12px;text-align:center">Your key is stored only in this browser. No one else can see your recipes.</p>
-  </div>
-</div>
+
 
 <div class="header">
   <h1>My <span>Recipes</span></h1>
@@ -154,7 +129,7 @@
     <div class="chip" onclick="setFilter('Breakfast')">🍳 Breakfast</div>
     <div class="chip" onclick="setFilter('Lunch')">🥗 Lunch</div>
     <div class="chip" onclick="setFilter('Dinner')">🍽 Dinner</div>
-    <div class="chip" onclick="setFilter('Dessert')">🍰 Dessert</div>
+
     <div class="chip" onclick="setFilter('Snack')">🍿 Snack</div>
     <div class="chip" onclick="setFilter('Other')">📦 Other</div>
   </div>
@@ -218,7 +193,7 @@
     <div class="form-group"><label>Recipe Name</label><input type="text" id="rName" placeholder="e.g. Grandma's Apple Pie"></div>
     <div class="form-row">
       <div class="form-group"><label>Category</label>
-        <select id="rCat"><option>Breakfast</option><option>Lunch</option><option selected>Dinner</option><option>Dessert</option><option>Snack</option><option>Other</option></select>
+        <select id="rCat"><option>Breakfast</option><option>Lunch</option><option selected>Dinner</option><option>Snack</option><option>Other</option></select>
       </div>
       <div class="form-group"><label>Servings</label><input type="text" id="rServings" placeholder="4"></div>
     </div>
@@ -301,8 +276,6 @@
 <script>
 // ── Config ─────────────────────────────────────────────────────────────────
 const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
-const JSONBIN_MASTER_KEY = '$2a$10$8RcFAngJW5eqxh/I8nd1PebO4MCCpLKZQrpUytd2u66pEHr6eUlsy';
-const JSONBIN_BIN_ID = '69a1b8e2d0ea881f40df4d31'; 
 let recipes = [];
 let currentFilter = 'All';
 let currentRecipeId = null;
@@ -313,9 +286,14 @@ let isSaving = false;
 function getCfg(k) { try { return localStorage.getItem(k) || ''; } catch(e){return '';} }
 function setCfg(k,v) { try { localStorage.setItem(k,v); } catch(e){} }
 
-function getMasterKey() { return getCfg('jb_masterkey'); }
-function getBinId() { return getCfg('jb_binid'); }
-function getAnthropicKey() { return getCfg('anthropic_key'); }
+// ── Hardcoded keys — fill these in before uploading to GitHub ──────────────
+const JSONBIN_MASTER_KEY = '$2a$10$8RcFAngJW5eqxh/I8nd1PebO4MCCpLKZQrpUytd2u66pEHr6eUlsy';
+const JSONBIN_BIN_ID = '69a1b8e2d0ea881f40df4d31'; 
+const ANTHROPIC_KEY      = 'PASTE_YOUR_ANTHROPIC_KEY_HERE'; // optional
+
+function getMasterKey()   { return JSONBIN_MASTER_KEY || getCfg('jb_masterkey'); }
+function getBinId()       { return JSONBIN_BIN_ID     || getCfg('jb_binid'); }
+function getAnthropicKey(){ return ANTHROPIC_KEY       || getCfg('anthropic_key'); }
 
 // ── Sync UI ────────────────────────────────────────────────────────────────
 function setSyncState(state, msg) {
@@ -383,15 +361,12 @@ async function loadFromCloud() {
 
 // ── Init / Setup ───────────────────────────────────────────────────────────
 function checkSetup() {
-  const key = getMasterKey();
-  if(key) {
-    document.getElementById('setupOverlay').style.display = 'none';
-    document.getElementById('settingsKey').value = key;
-    document.getElementById('settingsBinId').value = getBinId();
-    const aKey = getAnthropicKey();
-    if(aKey) document.getElementById('anthropicKeyInput').value = aKey;
-    loadFromCloud();
-  }
+  document.getElementById('settingsKey').value = getMasterKey();
+  document.getElementById('settingsBinId').value = getBinId();
+  const aKey = getAnthropicKey();
+  if(aKey) document.getElementById('anthropicKeyInput').value = aKey;
+  if(JSONBIN_BIN_ID) setCfg('jb_binid', JSONBIN_BIN_ID);
+  loadFromCloud();
 }
 
 async function initStorage() {
