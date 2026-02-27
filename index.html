@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My Recipes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #faf9f7; --card: #fff; --accent: #e8632a; --accent2: #f5a623;
+    --text: #1a1a1a; --sub: #777; --border: #eee; --radius: 16px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 430px; margin: 0 auto; }
+  .header { background: var(--card); padding: 56px 20px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+  .header h1 span { color: var(--accent); }
+  .search-bar { display: flex; align-items: center; background: #f2f2f7; border-radius: 12px; padding: 10px 14px; gap: 8px; }
+  .search-bar input { flex: 1; border: none; background: transparent; font-size: 16px; outline: none; }
+  .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); }
+  .tab { flex: 1; padding: 12px 0; text-align: center; font-size: 13px; font-weight: 500; color: var(--sub); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .page { display: none; padding: 16px; padding-bottom: 40px; }
+  .page.active { display: block; }
+  .recipe-grid { display: flex; flex-direction: column; gap: 12px; }
+  .recipe-card { background: var(--card); border-radius: var(--radius); padding: 16px; cursor: pointer; border: 1px solid var(--border); transition: transform .15s; }
+  .recipe-card:active { transform: scale(.98); }
+  .recipe-card .cat-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; margin-bottom: 8px; }
+  .recipe-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .recipe-card .meta { font-size: 13px; color: var(--sub); display: flex; gap: 12px; flex-wrap: wrap; }
+  .cat-Breakfast{background:#fff3e0;color:#e65100} .cat-Lunch{background:#e8f5e9;color:#2e7d32}
+  .cat-Dinner{background:#e3f2fd;color:#1565c0} .cat-Dessert{background:#fce4ec;color:#c62828}
+  .cat-Snack{background:#f3e5f5;color:#6a1b9a} .cat-Other{background:#f5f5f5;color:#424242}
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--sub); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .import-section { background: var(--card); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+  .import-section h2 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .import-section p { font-size: 14px; color: var(--sub); margin-bottom: 14px; line-height: 1.4; }
+  .file-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; margin-bottom: 12px; }
+  .file-drop:hover, .file-drop.drag { border-color: var(--accent); background: #fff5f0; }
+  .file-drop .drop-icon { font-size: 32px; margin-bottom: 8px; }
+  .file-drop p { font-size: 14px; color: var(--sub); }
+  .file-drop strong { color: var(--accent); }
+  input[type=file] { display: none; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 12px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: opacity .15s, transform .1s; width: 100%; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: #f2f2f7; color: var(--text); }
+  .btn-danger { background: #ffebee; color: #c62828; }
+  .btn-green { background: #e8f5e9; color: #2e7d32; }
+  .ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; padding: 3px 8px; border-radius: 20px; margin-bottom: 8px; }
+  .progress-bar { height: 4px; background: #f0f0f0; border-radius: 2px; margin: 8px 0; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width .3s; }
+  .status-msg { font-size: 13px; color: var(--sub); text-align: center; min-height: 20px; }
+  .status-msg.success { color: #2e7d32; } .status-msg.error { color: #c62828; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--sub); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--card); color: var(--text); font-family: inherit; outline: none; transition: border-color .2s; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { min-height: 100px; resize: vertical; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .detail-view { position: fixed; inset: 0; background: var(--bg); z-index: 200; overflow-y: auto; max-width: 430px; margin: 0 auto; transform: translateX(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); }
+  .detail-view.open { transform: translateX(0); }
+  .detail-header { padding: 56px 20px 20px; background: var(--card); border-bottom: 1px solid var(--border); }
+  .back-btn { display: flex; align-items: center; gap: 6px; color: var(--accent); font-size: 16px; font-weight: 500; cursor: pointer; margin-bottom: 12px; background: none; border: none; }
+  .detail-header h1 { font-size: 24px; font-weight: 700; line-height: 1.2; }
+  .detail-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 14px; color: var(--sub); }
+  .detail-body { padding: 20px; }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--sub); margin-bottom: 12px; margin-top: 24px; }
+  .ingredient-list { list-style: none; }
+  .ingredient-list li { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .ingredient-list li:last-child { border-bottom: none; }
+  .ingredient-list li::before { content: '•'; color: var(--accent); font-size: 18px; }
+  .step-list { list-style: none; }
+  .step-list li { display: flex; gap: 14px; margin-bottom: 16px; align-items: flex-start; }
+  .step-num { min-width: 28px; height: 28px; background: var(--accent); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-text { font-size: 15px; line-height: 1.6; }
+  .notes-box { background: #fff8f0; border-left: 3px solid var(--accent2); padding: 14px; border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.6; }
+  .action-bar { display: flex; gap: 10px; padding: 0 20px 32px; }
+  .camera-area { border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 12px; }
+  #cameraVideo { width: 100%; display: block; max-height: 280px; object-fit: cover; }
+  #cameraCanvas { display: none; }
+  .camera-controls { display: flex; gap: 10px; }
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a1a; color: #fff; padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; z-index: 999; transition: transform .3s; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .filter-chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 4px; scrollbar-width: none; }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; color: var(--sub); transition: all .2s; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .source-badge { font-size: 11px; color: var(--sub); margin-top: 6px; }
+  /* Setup overlay */
+  .setup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .setup-box { background: var(--card); border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 390px; }
+  .setup-box h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .setup-box p { font-size: 14px; color: var(--sub); line-height: 1.6; margin-bottom: 16px; }
+  .setup-box ol { font-size: 14px; color: var(--sub); line-height: 2; padding-left: 18px; margin-bottom: 18px; }
+  .setup-box ol a { color: var(--accent); }
+  .setup-box .key-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .setup-box .key-row input { flex: 1; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: monospace; outline: none; }
+  .setup-box .key-row input:focus { border-color: var(--accent); }
+  .sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sub); padding: 4px 0; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+  .sync-dot.synced { background: #4caf50; }
+  .sync-dot.syncing { background: var(--accent2); animation: pulse 1s infinite; }
+  .sync-dot.error { background: #f44336; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-box">
+    <h2>☁️ Connect Cloud Storage</h2>
+    <p>Your recipes will be saved to <strong>JSONBin.io</strong> — a free cloud database — so they persist across all your devices and sessions.</p>
+    <ol>
+      <li>Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> and sign up free</li>
+      <li>Click your avatar → <strong>API Keys</strong></li>
+      <li>Copy your <strong>Master Key</strong> and paste it below</li>
+    </ol>
+    <div class="key-row">
+      <input type="password" id="apiKeyInput" placeholder="$2a$10$...your master key...">
+    </div>
+    <button class="btn btn-primary" onclick="initStorage()">🔗 Connect & Start</button>
+    <p style="margin-top:12px;font-size:12px;text-align:center">Your key is stored only in this browser. No one else can see your recipes.</p>
+  </div>
+</div>
+
+<div class="header">
+  <h1>My <span>Recipes</span></h1>
+  <div class="search-bar">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Search recipes, ingredients…">
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('recipes')">Recipes</div>
+  <div class="tab" onclick="switchTab('import')">Import</div>
+  <div class="tab" onclick="switchTab('manual')">Add</div>
+  <div class="tab" onclick="switchTab('settings')">Settings</div>
+</div>
+
+<!-- RECIPES PAGE -->
+<div class="page active" id="page-recipes">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 0">
+    <div class="sync-indicator">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Not connected</span>
+    </div>
+    <span style="font-size:12px;color:var(--sub)" id="recipeCount"></span>
+  </div>
+  <div class="filter-chips" id="filterChips">
+    <div class="chip active" onclick="setFilter('All')">All</div>
+    <div class="chip" onclick="setFilter('Breakfast')">🍳 Breakfast</div>
+    <div class="chip" onclick="setFilter('Lunch')">🥗 Lunch</div>
+    <div class="chip" onclick="setFilter('Dinner')">🍽 Dinner</div>
+    <div class="chip" onclick="setFilter('Dessert')">🍰 Dessert</div>
+    <div class="chip" onclick="setFilter('Snack')">🍿 Snack</div>
+    <div class="chip" onclick="setFilter('Other')">📦 Other</div>
+  </div>
+  <div class="recipe-grid" id="recipeGrid"></div>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="icon">👨‍🍳</div>
+    <p>No recipes yet.<br>Import files or add one manually!</p>
+  </div>
+</div>
+
+<!-- IMPORT PAGE -->
+<div class="page" id="page-import">
+  <div class="import-section">
+    <h2>📄 Import from Files</h2>
+    <p>Upload .docx, .pdf, .csv, or .txt files. Claude AI will extract recipes automatically.</p>
+    <div class="ai-badge">✨ AI-Powered Extraction</div>
+    <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
+      <div class="drop-icon">📂</div>
+      <p><strong>Tap to choose files</strong></p>
+      <p style="font-size:12px;margin-top:4px">DOCX · PDF · CSV · TXT</p>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".docx,.pdf,.csv,.txt,.doc">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="status-msg" id="importStatus"></div>
+  </div>
+  <div class="import-section">
+    <h2>📷 Scan a Paper Recipe</h2>
+    <p>Take a photo of a handwritten or printed recipe card. AI will read and extract it.</p>
+    <div class="ai-badge">✨ AI Vision</div>
+    <div class="camera-area" id="cameraArea" style="display:none">
+      <video id="cameraVideo" autoplay playsinline></video>
+      <canvas id="cameraCanvas"></canvas>
+    </div>
+    <img id="capturedImg" style="width:100%;border-radius:12px;display:none;margin-bottom:12px" alt="">
+    <div class="camera-controls">
+      <button class="btn btn-secondary" id="startCamBtn" onclick="startCamera()">📷 Open Camera</button>
+      <button class="btn btn-primary" id="captureBtn" onclick="capturePhoto()" style="display:none">⚡ Capture</button>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn btn-secondary" onclick="document.getElementById('photoInput').click()">🖼 Choose Photo</button>
+      <input type="file" id="photoInput" accept="image/*" style="display:none">
+    </div>
+    <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" id="camProgress" style="width:0%"></div></div>
+    <div class="status-msg" id="camStatus"></div>
+  </div>
+  <div class="import-section">
+    <h2>📋 Paste Recipe Text</h2>
+    <p>Paste any recipe text and Claude will parse it into structured format.</p>
+    <div class="ai-badge">✨ AI Parse</div>
+    <textarea id="pasteText" style="width:100%;min-height:120px;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;resize:vertical;outline:none" placeholder="Paste recipe text here…"></textarea>
+    <button class="btn btn-primary" style="margin-top:10px" onclick="parsePastedText()">Parse & Import</button>
+    <div class="progress-bar"><div class="progress-fill" id="pasteProgress" style="width:0%"></div></div>
+    <div class="status-msg" id="pasteStatus"></div>
+  </div>
+</div>
+
+<!-- MANUAL ADD PAGE -->
+<div class="page" id="page-manual">
+  <div class="import-section">
+    <h2>✍️ Add Recipe Manually</h2>
+    <div class="form-group"><label>Recipe Name</label><input type="text" id="rName" placeholder="e.g. Grandma's Apple Pie"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Category</label>
+        <select id="rCat"><option>Breakfast</option><option>Lunch</option><option selected>Dinner</option><option>Dessert</option><option>Snack</option><option>Other</option></select>
+      </div>
+      <div class="form-group"><label>Servings</label><input type="text" id="rServings" placeholder="4"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Prep Time</label><input type="text" id="rPrep" placeholder="15 min"></div>
+      <div class="form-group"><label>Cook Time</label><input type="text" id="rCook" placeholder="30 min"></div>
+    </div>
+    <div class="form-group"><label>Ingredients (one per line)</label><textarea id="rIngr" placeholder="2 cups flour&#10;1 tsp salt&#10;3 eggs…"></textarea></div>
+    <div class="form-group"><label>Instructions (one step per line)</label><textarea id="rSteps" style="min-height:140px" placeholder="Preheat oven to 350°F&#10;Mix dry ingredients…"></textarea></div>
+    <div class="form-group"><label>Notes (optional)</label><textarea id="rNotes" style="min-height:70px" placeholder="Tips, variations…"></textarea></div>
+    <button class="btn btn-primary" id="saveManualBtn" onclick="saveManual()">💾 Save Recipe</button>
+  </div>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div class="page" id="page-settings">
+  <div class="import-section">
+    <h2>☁️ Cloud Storage</h2>
+    <p>Your recipes are stored on JSONBin.io using your API key.</p>
+    <div class="form-group"><label>JSONBin Master Key</label>
+      <input type="password" id="settingsKey" placeholder="$2a$10$...">
+    </div>
+    <div class="form-group"><label>Bin ID (auto-filled after first save)</label>
+      <input type="text" id="settingsBinId" placeholder="Auto-created on first save" readonly style="background:#f9f9f9">
+    </div>
+    <div style="display:flex;gap:10px;flex-direction:column">
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      <button class="btn btn-green" onclick="syncNow()">🔄 Sync Now</button>
+      <button class="btn btn-danger" onclick="clearAll()">🗑 Clear All Recipes</button>
+    </div>
+    <div class="progress-bar" style="margin-top:12px"><div class="progress-fill" id="settingsProgress" style="width:0%"></div></div>
+    <div class="status-msg" id="settingsStatus"></div>
+  </div>
+  <div class="import-section">
+    <h2>🔑 Anthropic API Key</h2>
+    <p>Required for AI-powered recipe extraction from files and photos.</p>
+    <div class="form-group"><label>API Key</label>
+      <input type="password" id="anthropicKeyInput" placeholder="sk-ant-...">
+    </div>
+    <button class="btn btn-primary" onclick="saveAnthropicKey()">💾 Save Key</button>
+    <p style="font-size:12px;color:var(--sub);margin-top:10px">Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>. Keys are stored only in this browser.</p>
+  </div>
+  <div class="import-section">
+    <h2>📱 Install as App</h2>
+    <p>On iPhone: tap the Share button in Safari, then <strong>"Add to Home Screen"</strong> to use this as a full-screen app.</p>
+  </div>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="detail-view" id="detailView">
+  <div class="detail-header">
+    <button class="back-btn" onclick="closeDetail()">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Recipes
+    </button>
+    <div id="detailCatBadge"></div>
+    <h1 id="detailName"></h1>
+    <div class="detail-meta" id="detailMeta"></div>
+    <div class="source-badge" id="detailSource"></div>
+  </div>
+  <div class="detail-body">
+    <div class="section-title">Ingredients</div>
+    <ul class="ingredient-list" id="detailIngr"></ul>
+    <div class="section-title">Instructions</div>
+    <ol class="step-list" id="detailSteps"></ol>
+    <div id="notesWrap" style="display:none">
+      <div class="section-title">Notes</div>
+      <div class="notes-box" id="detailNotes"></div>
+    </div>
+  </div>
+  <div class="action-bar">
+    <button class="btn btn-secondary" id="editBtn">✏️ Edit</button>
+    <button class="btn btn-danger" id="deleteBtn">🗑 Delete</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+let recipes = [];
+let currentFilter = 'All';
+let currentRecipeId = null;
+let cameraStream = null;
+let isSaving = false;
+
+// ── LocalStorage config ────────────────────────────────────────────────────
+function getCfg(k) { try { return localStorage.getItem(k) || ''; } catch(e){return '';} }
+function setCfg(k,v) { try { localStorage.setItem(k,v); } catch(e){} }
+
+function getMasterKey() { return getCfg('jb_masterkey'); }
+function getBinId() { return getCfg('jb_binid'); }
+function getAnthropicKey() { return getCfg('anthropic_key'); }
+
+// ── Sync UI ────────────────────────────────────────────────────────────────
+function setSyncState(state, msg) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = msg;
+}
+
+// ── JSONBin API ────────────────────────────────────────────────────────────
+async function jbGet() {
+  const key = getMasterKey(), binId = getBinId();
+  if(!key || !binId) return null;
+  const r = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
+    headers: { 'X-Master-Key': key }
+  });
+  if(!r.ok) throw new Error('Fetch failed: ' + r.status);
+  const d = await r.json();
+  return d.record?.recipes || [];
+}
+
+async function jbSave(recipesArr) {
+  const key = getMasterKey();
+  if(!key) return;
+  setSyncState('syncing', 'Saving…');
+  const binId = getBinId();
+  const payload = JSON.stringify({ recipes: recipesArr });
+  let r;
+  if(!binId) {
+    // Create new bin
+    r = await fetch(`${JSONBIN_BASE}/b`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Bin-Name': 'MyRecipes', 'X-Bin-Private': 'true' },
+      body: payload
+    });
+    if(!r.ok) throw new Error('Create bin failed: ' + r.status);
+    const d = await r.json();
+    setCfg('jb_binid', d.metadata.id);
+    document.getElementById('settingsBinId').value = d.metadata.id;
+  } else {
+    r = await fetch(`${JSONBIN_BASE}/b/${binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
+      body: payload
+    });
+    if(!r.ok) throw new Error('Update failed: ' + r.status);
+  }
+  setSyncState('synced', 'Saved to cloud ✓');
+}
+
+// ── Load ───────────────────────────────────────────────────────────────────
+async function loadFromCloud() {
+  const key = getMasterKey();
+  if(!key) { setSyncState('', 'No API key — go to Settings'); return; }
+  setSyncState('syncing', 'Loading…');
+  try {
+    const data = await jbGet();
+    if(data) { recipes = data; renderRecipes(); }
+    setSyncState('synced', `${recipes.length} recipes synced ✓`);
+  } catch(e) {
+    setSyncState('error', 'Sync error — check your key');
+    showToast('Could not load from cloud');
+  }
+}
+
+// ── Init / Setup ───────────────────────────────────────────────────────────
+function checkSetup() {
+  const key = getMasterKey();
+  if(key) {
+    document.getElementById('setupOverlay').style.display = 'none';
+    document.getElementById('settingsKey').value = key;
+    document.getElementById('settingsBinId').value = getBinId();
+    const aKey = getAnthropicKey();
+    if(aKey) document.getElementById('anthropicKeyInput').value = aKey;
+    loadFromCloud();
+  }
+}
+
+async function initStorage() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if(!key) { showToast('Please enter your API key'); return; }
+  setCfg('jb_masterkey', key);
+  document.getElementById('setupOverlay').style.display = 'none';
+  document.getElementById('settingsKey').value = key;
+  setSyncState('syncing', 'Connecting…');
+  try {
+    const data = await jbGet();
+    if(data && data.length) { recipes = data; renderRecipes(); }
+    setSyncState('synced', `Connected! ${recipes.length} recipes loaded ✓`);
+    showToast('Connected to cloud storage! ☁️');
+  } catch(e) {
+    // Bin doesn't exist yet — will be created on first save
+    setSyncState('synced', 'Ready — recipes will save automatically');
+    showToast('Connected! Start adding recipes 🎉');
+  }
+}
+
+function saveSettings() {
+  const key = document.getElementById('settingsKey').value.trim();
+  if(!key) { showToast('Please enter a key'); return; }
+  setCfg('jb_masterkey', key);
+  showToast('Settings saved'); syncNow();
+}
+
+function saveAnthropicKey() {
+  const k = document.getElementById('anthropicKeyInput').value.trim();
+  if(!k) { showToast('Please enter your Anthropic key'); return; }
+  setCfg('anthropic_key', k);
+  showToast('Anthropic key saved ✓');
+}
+
+async function syncNow() {
+  setSyncState('syncing', 'Syncing…');
+  setProgress('settingsProgress', 30, 'Loading from cloud…');
+  try {
+    const data = await jbGet();
+    if(data) { recipes = data; renderRecipes(); }
+    setSyncState('synced', `${recipes.length} recipes synced ✓`);
+    setProgress('settingsProgress', 100, '✅ Sync complete', 'success');
+    showToast('Synced!');
+  } catch(e) {
+    setSyncState('error', 'Sync failed');
+    setProgress('settingsProgress', 0, '❌ ' + e.message, 'error');
+  }
+}
+
+function clearAll() {
+  if(!confirm('Delete ALL recipes? This cannot be undone.')) return;
+  recipes = [];
+  jbSave([]); renderRecipes();
+  showToast('All recipes deleted');
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['recipes','import','manual','settings'][i]===t));
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+t).classList.add('active');
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.textContent.replace(/[^a-zA-Z]/g,'').toLowerCase()===(f==='All'?'all':f.toLowerCase())));
+  renderRecipes();
+}
+
+function renderRecipes() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let list = recipes.filter(r=>{
+    const matchCat = currentFilter==='All' || r.category===currentFilter;
+    const matchQ = !q || r.name?.toLowerCase().includes(q) || (r.ingredients||[]).some(i=>i.toLowerCase().includes(q));
+    return matchCat && matchQ;
+  });
+  document.getElementById('recipeCount').textContent = `${recipes.length} recipe${recipes.length!==1?'s':''}`;
+  const grid = document.getElementById('recipeGrid');
+  const empty = document.getElementById('emptyState');
+  if(!list.length) { grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  grid.innerHTML = list.map(r=>`
+    <div class="recipe-card" onclick="openDetail('${r.id}')">
+      <span class="cat-badge cat-${r.category||'Other'}">${r.category||'Other'}</span>
+      <h3>${r.name}</h3>
+      <div class="meta">
+        ${r.servings?`<span>👥 ${r.servings}</span>`:''}
+        ${r.prepTime?`<span>⏱ ${r.prepTime}</span>`:''}
+        ${r.cookTime?`<span>🔥 ${r.cookTime}</span>`:''}
+        ${r.ingredients?.length?`<span>🧂 ${r.ingredients.length} ingredients</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', renderRecipes);
+
+// ── Detail ─────────────────────────────────────────────────────────────────
+function openDetail(id) {
+  const r = recipes.find(x=>x.id===id);
+  if(!r) return;
+  currentRecipeId = id;
+  document.getElementById('detailCatBadge').innerHTML=`<span class="cat-badge cat-${r.category||'Other'}">${r.category||'Other'}</span>`;
+  document.getElementById('detailName').textContent=r.name;
+  document.getElementById('detailSource').textContent=r.source?`Source: ${r.source}`:'';
+  document.getElementById('detailMeta').innerHTML=[
+    r.servings?`<span>👥 ${r.servings} servings</span>`:'',
+    r.prepTime?`<span>⏱ Prep: ${r.prepTime}</span>`:'',
+    r.cookTime?`<span>🔥 Cook: ${r.cookTime}</span>`:''
+  ].filter(Boolean).join('');
+  document.getElementById('detailIngr').innerHTML=(r.ingredients||[]).map(i=>`<li>${i}</li>`).join('');
+  document.getElementById('detailSteps').innerHTML=(r.steps||[]).map((s,i)=>`<li><div class="step-num">${i+1}</div><div class="step-text">${s}</div></li>`).join('');
+  const nw=document.getElementById('notesWrap');
+  if(r.notes){nw.style.display='block';document.getElementById('detailNotes').textContent=r.notes;}else nw.style.display='none';
+  document.getElementById('detailView').classList.add('open');
+  document.getElementById('deleteBtn').onclick=()=>deleteRecipe(id);
+  document.getElementById('editBtn').onclick=()=>editRecipe(id);
+}
+
+function closeDetail() { document.getElementById('detailView').classList.remove('open'); }
+
+function deleteRecipe(id) {
+  if(!confirm('Delete this recipe?')) return;
+  recipes = recipes.filter(r=>r.id!==id);
+  persistSave(); closeDetail(); renderRecipes();
+  showToast('Recipe deleted');
+}
+
+function editRecipe(id) {
+  const r=recipes.find(x=>x.id===id); if(!r) return;
+  switchTab('manual'); closeDetail();
+  document.getElementById('rName').value=r.name||'';
+  document.getElementById('rCat').value=r.category||'Other';
+  document.getElementById('rServings').value=r.servings||'';
+  document.getElementById('rPrep').value=r.prepTime||'';
+  document.getElementById('rCook').value=r.cookTime||'';
+  document.getElementById('rIngr').value=(r.ingredients||[]).join('\n');
+  document.getElementById('rSteps').value=(r.steps||[]).join('\n');
+  document.getElementById('rNotes').value=r.notes||'';
+  document.getElementById('saveManualBtn').setAttribute('data-edit-id',id);
+  document.getElementById('saveManualBtn').textContent='💾 Update Recipe';
+}
+
+// ── Persist ────────────────────────────────────────────────────────────────
+async function persistSave() {
+  try { await jbSave(recipes); }
+  catch(e) { setSyncState('error','Save failed — check connection'); showToast('⚠️ Could not save to cloud'); }
+}
+
+// ── Manual Save ────────────────────────────────────────────────────────────
+async function saveManual() {
+  const name=document.getElementById('rName').value.trim();
+  if(!name){showToast('Please enter a recipe name');return;}
+  const btn=document.getElementById('saveManualBtn');
+  const editId=btn.getAttribute('data-edit-id');
+  const recipe={
+    id:editId||uid(), name,
+    category:document.getElementById('rCat').value,
+    servings:document.getElementById('rServings').value.trim(),
+    prepTime:document.getElementById('rPrep').value.trim(),
+    cookTime:document.getElementById('rCook').value.trim(),
+    ingredients:document.getElementById('rIngr').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    steps:document.getElementById('rSteps').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    notes:document.getElementById('rNotes').value.trim(),
+    source:'Manual entry'
+  };
+  if(editId){const i=recipes.findIndex(r=>r.id===editId);if(i>-1)recipes[i]=recipe;}
+  else recipes.unshift(recipe);
+  await persistSave(); renderRecipes();
+  ['rName','rServings','rPrep','rCook','rIngr','rSteps','rNotes'].forEach(id=>document.getElementById(id).value='');
+  btn.removeAttribute('data-edit-id'); btn.textContent='💾 Save Recipe';
+  switchTab('recipes');
+  showToast(editId?'Recipe updated!':'Recipe saved! 🎉');
+}
+
+// ── AI Extraction ──────────────────────────────────────────────────────────
+async function callClaude(userContent) {
+  const key = getAnthropicKey();
+  if(!key) { showToast('Set your Anthropic API key in Settings first'); throw new Error('No Anthropic key'); }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({
+      model:'claude-opus-4-6',
+      max_tokens:4000,
+      system:`You are a recipe extraction assistant. Extract recipe data and return ONLY a JSON array of recipe objects (no markdown, no explanation). Each object: {name, category (Breakfast/Lunch/Dinner/Dessert/Snack/Other), servings, prepTime, cookTime, ingredients (array of strings), steps (array of strings), notes}. If multiple recipes, include all. Omit unknown fields.`,
+      messages:[{role:'user',content:userContent}]
+    })
+  });
+  if(!res.ok) { const e=await res.json(); throw new Error(e.error?.message||'API error'); }
+  const data=await res.json();
+  const text=data.content?.map(b=>b.text||'').join('');
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+function setProgress(fillId, pct, msg, cls='') {
+  document.getElementById(fillId).style.width=pct+'%';
+  const statusId = fillId==='progressFill'?'importStatus':fillId==='camProgress'?'camStatus':fillId==='pasteProgress'?'pasteStatus':'settingsStatus';
+  const s=document.getElementById(statusId);
+  if(s){s.textContent=msg;s.className='status-msg '+cls;}
+}
+
+// ── File Import ────────────────────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', async e=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  setProgress('progressFill',10,'Reading files…');
+  let allText='';
+  for(const f of files){
+    if(f.name.endsWith('.docx')){
+      const buf=await f.arrayBuffer();
+      const r=await mammoth.extractRawText({arrayBuffer:buf});
+      allText+=`\n\n=== ${f.name} ===\n${r.value}`;
+    } else { allText+=`\n\n=== ${f.name} ===\n`+(await f.text()); }
+  }
+  setProgress('progressFill',40,'Sending to Claude AI…');
+  try {
+    const extracted=await callClaude([{type:'text',text:'Extract all recipes from this content:\n'+allText.slice(0,20000)}]);
+    extracted.forEach(r=>{r.id=uid();r.source=files.map(f=>f.name).join(', ');});
+    recipes.unshift(...extracted);
+    await persistSave(); renderRecipes();
+    setProgress('progressFill',100,`✅ Imported ${extracted.length} recipe(s)!`,'success');
+    showToast(`Imported ${extracted.length} recipe(s) 🎉`);
+  } catch(err){ setProgress('progressFill',0,'❌ '+err.message,'error'); }
+  e.target.value='';
+});
+
+const drop=document.getElementById('fileDrop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');document.getElementById('fileInput').files=e.dataTransfer.files;document.getElementById('fileInput').dispatchEvent(new Event('change'));});
+
+// ── Paste ──────────────────────────────────────────────────────────────────
+async function parsePastedText() {
+  const txt=document.getElementById('pasteText').value.trim();
+  if(!txt){showToast('Please paste some text first');return;}
+  setProgress('pasteProgress',30,'Parsing with Claude AI…');
+  try {
+    const extracted=await callClaude([{type:'text',text:'Extract recipes from:\n'+txt.slice(0,15000)}]);
+    extracted.forEach(r=>{r.id=uid();r.source='Pasted text';});
+    recipes.unshift(...extracted);
+    await persistSave(); renderRecipes();
+    document.getElementById('pasteText').value='';
+    setProgress('pasteProgress',100,`✅ ${extracted.length} recipe(s) imported!`,'success');
+    showToast(`Imported ${extracted.length} recipe(s) 🎉`);
+  } catch(err){ setProgress('pasteProgress',0,'❌ '+err.message,'error'); }
+}
+
+// ── Camera ─────────────────────────────────────────────────────────────────
+async function startCamera() {
+  try {
+    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    document.getElementById('cameraVideo').srcObject=cameraStream;
+    document.getElementById('cameraArea').style.display='block';
+    document.getElementById('captureBtn').style.display='flex';
+    document.getElementById('startCamBtn').style.display='none';
+  } catch(e){showToast('Camera not available');}
+}
+
+function capturePhoto() {
+  const v=document.getElementById('cameraVideo'), c=document.getElementById('cameraCanvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  const dataUrl=c.toDataURL('image/jpeg',.85);
+  cameraStream?.getTracks().forEach(t=>t.stop());
+  document.getElementById('cameraArea').style.display='none';
+  document.getElementById('captureBtn').style.display='none';
+  document.getElementById('startCamBtn').style.display='flex';
+  processImage(dataUrl,'Camera capture');
+}
+
+document.getElementById('photoInput').addEventListener('change',async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>processImage(ev.target.result, file.name);
+  reader.readAsDataURL(file); e.target.value='';
+});
+
+async function processImage(dataUrl, source) {
+  document.getElementById('capturedImg').src=dataUrl;
+  document.getElementById('capturedImg').style.display='block';
+  setProgress('camProgress',30,'Analyzing with Claude AI…');
+  const base64=dataUrl.split(',')[1], mediaType=dataUrl.split(';')[0].split(':')[1];
+  try {
+    const extracted=await callClaude([
+      {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+      {type:'text',text:'Extract all recipes from this image. Return JSON only.'}
+    ]);
+    extracted.forEach(r=>{r.id=uid();r.source=source;});
+    recipes.unshift(...extracted);
+    await persistSave(); renderRecipes();
+    setProgress('camProgress',100,`✅ ${extracted.length} recipe(s) extracted!`,'success');
+    showToast(`Imported ${extracted.length} recipe(s) 🎉`);
+  } catch(err){ setProgress('camProgress',0,'❌ '+err.message,'error'); }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+checkSetup();
+</script>
+</body>
+</html>
