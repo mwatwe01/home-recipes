@@ -126,12 +126,11 @@
   </div>
   <div class="filter-chips" id="filterChips">
     <div class="chip active" onclick="setFilter('All')">All</div>
-    <div class="chip" onclick="setFilter('Breakfast')">🍳 Breakfast</div>
-    <div class="chip" onclick="setFilter('Lunch')">🥗 Lunch</div>
     <div class="chip" onclick="setFilter('Dinner')">🍽 Dinner</div>
-
     <div class="chip" onclick="setFilter('Snack')">🍿 Snack</div>
     <div class="chip" onclick="setFilter('Drinks')">🥤 Drinks</div>
+    <div class="chip" onclick="setFilter('Breakfast')">🍳 Breakfast</div>
+    <div class="chip" onclick="setFilter('Lunch')">🥗 Lunch</div>   
     <div class="chip" onclick="setFilter('Other')">📦 Other</div>
   </div>
   <div class="recipe-grid" id="recipeGrid"></div>
@@ -194,7 +193,12 @@
     <div class="form-group"><label>Recipe Name</label><input type="text" id="rName" placeholder="e.g. Grandma's Apple Pie"></div>
     <div class="form-row">
       <div class="form-group"><label>Category</label>
-        <select id="rCat"><option>Breakfast</option><option>Lunch</option><option selected>Dinner</option><option>Snack</option>          <option>Drinks</option>
+        <select id="rCat">
+         <option selected>Dinner</option>
+         <option>Snack</option>
+         <option>Drinks</option>
+         <option>Breakfast</option>
+         <option>Lunch</option>
           <option>Other</option></select>
       </div>
       <div class="form-group"><label>Servings</label><input type="text" id="rServings" placeholder="4"></div>
