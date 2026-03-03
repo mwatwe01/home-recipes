@@ -278,6 +278,7 @@
 <script>
 // ── Config ─────────────────────────────────────────────────────────────────
 const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+
 let recipes = [];
 let currentFilter = 'All';
 let currentRecipeId = null;
@@ -289,8 +290,13 @@ function getCfg(k) { try { return localStorage.getItem(k) || ''; } catch(e){retu
 function setCfg(k,v) { try { localStorage.setItem(k,v); } catch(e){} }
 
 // ── Hardcoded keys — fill these in before uploading to GitHub ──────────────
-const JSONBIN_MASTER_KEY = 'PASTE_YOUR_JSONBIN_KEY_HERE';
-const JSONBIN_BIN_ID     = 'PASTE_YOUR_BIN_ID_HERE'; // leave blank first time
+const JSONBIN_MASTER_KEY = '$2a$10$8RcFAngJW5eqxh/I8nd1PebO4MCCpLKZQrpUytd2u66pEHr6eUlsy';
+const JSONBIN_BIN_ID = '69a1b8e2d0ea881f40df4d31'; 
+const ANTHROPIC_KEY      = 'PASTE_YOUR_ANTHROPIC_KEY_HERE'; // optional
+
+function getMasterKey()   { return JSONBIN_MASTER_KEY || getCfg('jb_masterkey'); }
+function getBinId()       { return JSONBIN_BIN_ID     || getCfg('jb_binid'); }
+function getAnthropicKey(){ return ANTHROPIC_KEY       || getCfg('anthropic_key'); }
 const ANTHROPIC_KEY      = 'PASTE_YOUR_ANTHROPIC_KEY_HERE'; // optional
 
 function getMasterKey()   { return JSONBIN_MASTER_KEY || getCfg('jb_masterkey'); }
